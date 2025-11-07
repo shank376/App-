@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<title>StudyMeter — App (Dark)</title>
+
+<!-- Tailwind utilities (optional but convenient) -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+  :root{
+    --bg-1: #04060a;
+    --bg-2: #081028;
+    --card: rgba(255,255,255,0.03);
+    --muted: rgba(230,238,248,0.68);
+    --accent1: #06b6d4;
+    --accent2: #3b82f6;
+  }
+
+  html,body{height:100%; margin:0; padding:0; -webkit-text-size-adjust:100%;}
+  body{
+    background:
+      radial-gradient(700px 420px at 12% 10%, rgba(6,182,212,0.03), transparent 14%),
+      radial-gradient(600px 360px at 92% 88%, rgba(59,130,246,0.02), transparent 10%),
+      linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    color:#e6eef8;
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:12px;
+  }
+
+  /* App container */
+  .app {
+    width:100%;
+    max-width:920px;
+    height:calc(100vh - 24px);
+    border-radius:18px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    box-shadow: 0 40px 90px rgba(2,6,23,0.8);
+    border:1px solid rgba(255,255,255,0.03);
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+  }
+
+  /* STICKY HEADER */
+  .head {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:14px 16px;
+    border-bottom:1px solid rgba(255,255,255,0.02);
+    position:sticky;
+    top:0;
+    z-index:30;
+    backdrop-filter: blur(4px);
+    background: linear-gradient(180deg, rgba(4,6,10,0.6), rgba(6,10,20,0.55));
+  }
+
+  .brand { display:flex; gap:12px; align-items:center; }
+  .logo {
+    width:48px; height:48px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(135deg, rgba(6,182,212,0.08), rgba(59,130,246,0.03));
+    border:1px solid rgba(255,255,255,0.03);
+    flex-shrink:0;
+  }
+
+  .app-title { font-weight:800; font-size:16px; letter-spacing:-0.2px; }
+  .app-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+
+  /* header right */
+  .hdr-right { display:flex; align-items:center; gap:10px; }
+
+  .ring-wrap { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:12px; background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.02); }
+
+  /* CONTENT area scrolls */
+  .content {
+    flex:1 1 auto;
+    overflow:auto;
+    padding:14px;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Cards */
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.03);
+    border-radius:12px;
+    padding:12px;
+    box-shadow: 0 8px 30px rgba(2,6,23,0.55);
+  }
+  .card.soft { background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.008)); }
+
+  /* grid */
+  .grid-2 { display:grid; grid-template-columns:1fr; gap:12px; }
+  @media(min-width:640px){ .grid-2 { grid-template-columns:repeat(2,1fr); } }
+
+  /* progress track */
+  .progress-track { height:12px; background: rgba(255,255,255,0.03); border-radius:999px; overflow:hidden; }
+  .progress-fill { height:12px; width:0%; border-radius:999px; transition: width 420ms cubic-bezier(.2,.9,.2,1), background .2s ease; box-shadow: 0 8px 18px rgba(3,10,30,0.45); }
+
+  /* buttons */
+  .btn {
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer; border:none;
+  }
+
+  .btn-ghost { background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03); }
+  .btn-accent { background:linear-gradient(90deg,var(--accent1),var(--accent2)); color:#001018; }
+
+  /* topic row */
+  input[type="checkbox"] { width:20px; height:20px; accent-color: var(--accent1); border-radius:6px; }
+
+  /* modal */
+  .modal-root { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:60; }
+  .modal-back { position:absolute; inset:0; background:rgba(2,6,23,0.6); }
+  .modal-card { position:relative; width:94%; max-width:480px; border-radius:12px; padding:14px; background:linear-gradient(180deg, rgba(9,12,20,0.96), rgba(8,11,18,0.94)); border:1px solid rgba(255,255,255,0.03); box-shadow:0 18px 40px rgba(2,6,23,0.7); }
+
+  /* small */
+  .muted { color:var(--muted); }
+  .muted-sm { color:rgba(230,238,248,0.6); font-size:13px; }
+
+  @media (max-width:420px){
+    .logo { width:44px; height:44px; }
+  }
+
+</style>
+</head>
+<body>
+  <div class="app" id="app">
+      <style>
+  .app {
+    zoom: 0.6; /* change 1.1 to make bigger or smaller */
+  }
+</style>
+
+    <!-- HEADER (sticky) -->
+    <header class="head">
+      <div class="brand">
+        <div class="logo" aria-hidden>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="3" rx="1" fill="url(#g1)"/><rect x="3" y="10" width="18" height="3" rx="1" fill="url(#g2)"/><rect x="3" y="16" width="18" height="3" rx="1" fill="url(#g3)"/><defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#06b6d4"/><stop offset="1" stop-color="#3b82f6"/></linearGradient><linearGradient id="g2" x1="0" x2="1"><stop offset="0" stop-color="#06b6d4"/><stop offset="1" stop-color="#60a5fa"/></linearGradient><linearGradient id="g3" x1="0" x2="1"><stop offset="0" stop-color="#06b6d4"/><stop offset="1" stop-color="#93c5fd"/></linearGradient></defs></svg>
+        </div>
+        <div>
+          <div class="app-title">StudyMeter</div>
+          <div class="app-sub muted-sm">App-like study tracker</div>
+        </div>
+      </div>
+
+      <div class="hdr-right">
+        <div class="ring-wrap" aria-hidden>
+          <svg viewBox="0 0 36 36" width="56" height="56" style="transform:rotate(-90deg); display:block">
+            <defs><linearGradient id="ringgrad" x1="0" x2="1"><stop offset="0" stop-color="var(--accent1)"/><stop offset="1" stop-color="var(--accent2)"/></linearGradient></defs>
+            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="2.4"/>
+            <path id="overall-ring" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="url(#ringgrad)" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="0 100"/>
+          </svg>
+          <div style="text-align:left">
+            <div id="overall-percent" style="font-weight:800;font-size:15px">0%</div>
+            <div style="font-size:12px;color:var(--muted)">Overall</div>
+          </div>
+        </div>
+
+        <button id="btn-add-book" class="btn btn-accent" title="Add book">+ Book</button>
+      </div>
+    </header>
+
+    <!-- SCROLLABLE CONTENT -->
+    <main class="content" id="content">
+      <!-- HOME VIEW -->
+      <section id="home-view" class="page page-active">
+        <div class="card soft mb-4">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+            <div>
+              <div style="font-weight:800; font-size:15px">Welcome, Ether</div>
+              <div class="muted-sm" style="margin-top:6px">Tap a subject to open it. Tick topics to mark them done.</div>
+            </div>
+            <div style="text-align:right">
+              <div id="syllabus-percent" style="font-weight:800">0%</div>
+              <div style="font-size:12px;color:var(--muted)">Syllabus</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="books-grid" class="grid-2"></div>
+      </section>
+
+      <!-- BOOK VIEW (rendered) -->
+      <section id="book-view" class="page page-hidden" aria-hidden></section>
+
+      <!-- CHAPTER VIEW (rendered) -->
+      <section id="chapter-view" class="page page-hidden" aria-hidden></section>
+    </main>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal-root" class="modal-root" aria-hidden>
+    <div class="modal-back"></div>
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+        <div id="modal-title" style="font-weight:800">Modal</div>
+        <button id="modal-close" style="background:transparent;border:none;color:var(--muted);font-size:18px">✕</button>
+      </div>
+      <form id="modal-form" style="display:flex; flex-direction:column; gap:10px">
+        <input id="modal-input" placeholder="Enter title..." required style="padding:10px 12px; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); color:#e6eef8; outline:none" />
+        <div style="display:flex; gap:8px; justify-content:flex-end">
+          <button type="button" id="modal-cancel" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-accent">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script>
+(() => {
+  /* -------------------------
+     Storage & sample data
+     ------------------------- */
+  const KEY = 'studymeter_final_v1';
+  const sample = {
+    books: [
+      { id:'b_science', title:'Science', chapters:[
+        { id:'c_acids', title:'Acids, Bases & Salts', topics:[
+          { id:'t1', text:'Introduction', done:true },
+          { id:'t2', text:'Indicators', done:false },
+          { id:'t3', text:'pH scale', done:true },
+          { id:'t4', text:'Neutralization', done:false }
+        ]},
+        { id:'c_life', title:'Life Processes', topics:[
+          { id:'t5', text:'Nutrition', done:true },
+          { id:'t6', text:'Respiration', done:false }
+        ]}
+      ]},
+      { id:'b_math', title:'Mathematics', chapters:[
+        { id:'c_trig', title:'Trigonometry', topics:[
+          { id:'t7', text:'Identities', done:false },
+          { id:'t8', text:'Heights & Distances', done:false }
+        ]}
+      ]}
+    ]
+  };
+
+  let DATA = (function(){
+    try {
+      const raw = localStorage.getItem(KEY);
+      return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(sample));
+    } catch(e){
+      return JSON.parse(JSON.stringify(sample));
+    }
+  })();
+
+  function save(){ localStorage.setItem(KEY, JSON.stringify(DATA)); }
+
+  /* -------------------------
+     Utils
+     ------------------------- */
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const uid = (p='id') => p + '_' + Math.random().toString(36).slice(2,9);
+  const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+  function clamp(n,a=0,b=100){ return Math.max(a, Math.min(b, n)); }
+  function calcTopicPct(topics){ if(!topics || !topics.length) return 0; const done = topics.filter(t=>t.done).length; return Math.round(done/topics.length*100); }
+  function calcChapterPct(ch){ return calcTopicPct(ch.topics); }
+  function calcBookPct(b){ if(!b.chapters || !b.chapters.length) return 0; const sum = b.chapters.reduce((s,c) => s + calcChapterPct(c), 0); return Math.round(sum / b.chapters.length || 0); }
+  function calcOverall(){ if(!DATA.books || !DATA.books.length) return 0; const sum = DATA.books.reduce((s,b) => s + calcBookPct(b), 0); return Math.round(sum / DATA.books.length || 0); }
+  function colorFor(p){
+    if(p <= 40) return ['#fb7185','#fb923c'];
+    if(p <= 70) return ['#f59e0b','#facc15'];
+    return ['#34d399','#10b981'];
+  }
+
+  /* -------------------------
+     DOM refs
+     ------------------------- */
+  const booksGrid = $('#books-grid');
+  const overallPercentEl = $('#overall-percent');
+  const overallRing = $('#overall-ring');
+  const syllabusPercentEl = $('#syllabus-percent');
+
+  const homeView = $('#home-view');
+  const bookView = $('#book-view');
+  const chapterView = $('#chapter-view');
+
+  const modalRoot = $('#modal-root');
+  const modalTitle = $('#modal-title');
+  const modalInput = $('#modal-input');
+  const modalForm = $('#modal-form');
+  const modalClose = $('#modal-close');
+  const modalCancel = $('#modal-cancel');
+
+  const btnAddBook = $('#btn-add-book');
+
+  /* -------------------------
+     Render helpers
+     ------------------------- */
+
+  function updateOverallUI(){
+    const p = clamp(calcOverall());
+    overallPercentEl.textContent = p + '%';
+    syllabusPercentEl.textContent = p + '%';
+    overallRing.setAttribute('stroke-dasharray', `${p} ${100 - p}`);
+  }
+
+  function renderHome(){
+    booksGrid.innerHTML = '';
+    DATA.books.forEach(book => {
+      const bp = clamp(calcBookPct(book));
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.padding = '14px';
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <div>
+            <div style="font-weight:800; font-size:15px">${esc(book.title)}</div>
+            <div class="muted-sm" style="margin-top:6px">${book.chapters.length} chapters</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:800">${bp}%</div>
+            <div class="muted-sm">book</div>
+          </div>
+        </div>
+        <div style="margin-top:12px" class="progress-track"><div class="progress-fill" style="width:${bp}%; background:linear-gradient(90deg, ${colorFor(bp)[0]}, ${colorFor(bp)[1]})"></div></div>
+        <div style="display:flex; justify-content:space-between; gap:8px; margin-top:12px">
+          <div style="display:flex; gap:8px">
+            <button class="btn btn-ghost btn-open-book" data-id="${book.id}">Open</button>
+            <button class="btn btn-accent btn-add-ch" data-id="${book.id}">+ Ch</button>
+          </div>
+          <div style="display:flex; gap:8px">
+            <button class="btn btn-ghost btn-edit-book" data-id="${book.id}">Edit</button>
+            <button class="btn btn-ghost btn-del-book" data-id="${book.id}" style="color:#fb7185">Delete</button>
+          </div>
+        </div>
+      `;
+      booksGrid.appendChild(card);
+    });
+
+    // events
+    $$('.btn-open-book').forEach(b => b.addEventListener('click', e => openBook(e.currentTarget.dataset.id)));
+    $$('.btn-add-ch').forEach(b => b.addEventListener('click', e => openModal('addChapter', { bookId: e.currentTarget.dataset.id })));
+    $$('.btn-edit-book').forEach(b => b.addEventListener('click', e => {
+      const id = e.currentTarget.dataset.id;
+      const book = DATA.books.find(x => x.id === id) || {};
+      openModal('editBook', { bookId: id, title: book.title });
+    }));
+    $$('.btn-del-book').forEach(b => b.addEventListener('click', e => {
+      const id = e.currentTarget.dataset.id;
+      if(!confirm('Delete this book and all its chapters?')) return;
+      DATA.books = DATA.books.filter(x => x.id !== id);
+      save(); renderHome(); updateOverallUI();
+    }));
+
+    updateOverallUI();
+    showView('home');
+  }
+
+  function openBook(bookId){
+    const book = DATA.books.find(x => x.id === bookId); if(!book) return;
+    bookView.innerHTML = '';
+    const bp = clamp(calcBookPct(book));
+    const wrap = document.createElement('div');
+    wrap.className = 'card';
+    wrap.style.padding = '14px';
+    wrap.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <div>
+          <button id="back-home" class="btn btn-ghost" style="padding:6px 8px">← Dashboard</button>
+          <div style="font-weight:800; font-size:18px; margin-top:6px">${esc(book.title)}</div>
+          <div class="muted-sm" style="margin-top:6px">${book.chapters.length} chapters</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:800">${bp}%</div>
+          <div class="muted-sm">book</div>
+        </div>
+      </div>
+      <div style="margin-top:12px" class="progress-track"><div class="progress-fill" style="width:${bp}%; background:linear-gradient(90deg, ${colorFor(bp)[0]}, ${colorFor(bp)[1]})"></div></div>
+      <div id="chap-grid" style="margin-top:12px; display:grid; gap:12px"></div>
+    `;
+    wrap.querySelector('#back-home').addEventListener('click', () => renderHome());
+
+    const grid = wrap.querySelector('#chap-grid');
+    book.chapters.forEach(ch => {
+      const cp = clamp(calcChapterPct(ch));
+      const chCard = document.createElement('div');
+      chCard.className = 'card';
+      chCard.style.padding = '12px';
+      chCard.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <div>
+            <div style="font-weight:800">${esc(ch.title)}</div>
+            <div class="muted-sm" style="margin-top:6px">${ch.topics.length} topics</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:800">${cp}%</div>
+            <div class="muted-sm">chapter</div>
+          </div>
+        </div>
+        <div style="margin-top:10px" class="progress-track"><div class="progress-fill" style="width:${cp}%; background:linear-gradient(90deg, ${colorFor(cp)[0]}, ${colorFor(cp)[1]})"></div></div>
+        <div style="display:flex; justify-content:space-between; margin-top:10px">
+          <div style="display:flex; gap:8px">
+            <button class="btn btn-ghost btn-open-ch" data-b="${book.id}" data-c="${ch.id}">Open</button>
+            <button class="btn btn-accent btn-add-topic" data-b="${book.id}" data-c="${ch.id}">+ Topic</button>
+          </div>
+          <div style="display:flex; gap:8px">
+            <button class="btn btn-ghost btn-edit-ch" data-b="${book.id}" data-c="${ch.id}">Edit</button>
+            <button class="btn btn-ghost btn-del-ch" data-b="${book.id}" data-c="${ch.id}" style="color:#fb7185">Delete</button>
+          </div>
+        </div>
+      `;
+      grid.appendChild(chCard);
+    });
+
+    // wire grid handlers
+    grid.querySelectorAll('.btn-open-ch').forEach(b => b.addEventListener('click', e => openChapter(e.currentTarget.dataset.b, e.currentTarget.dataset.c)));
+    grid.querySelectorAll('.btn-add-topic').forEach(b => b.addEventListener('click', e => openModal('addTopic', { bookId: e.currentTarget.dataset.b, chapterId: e.currentTarget.dataset.c })));
+    grid.querySelectorAll('.btn-edit-ch').forEach(b => b.addEventListener('click', e => {
+      const bookId = e.currentTarget.dataset.b, chId = e.currentTarget.dataset.c;
+      const ch = (DATA.books.find(bk => bk.id === bookId) || {}).chapters.find(cc => cc.id === chId);
+      openModal('editChapter', { bookId, chapterId: chId, title: ch ? ch.title : '' });
+    }));
+    grid.querySelectorAll('.btn-del-ch').forEach(b => b.addEventListener('click', e => {
+      const bookId = e.currentTarget.dataset.b, chId = e.currentTarget.dataset.c;
+      if(!confirm('Delete chapter and its topics?')) return;
+      const bk = DATA.books.find(bk => bk.id === bookId); if(!bk) return;
+      bk.chapters = bk.chapters.filter(cc => cc.id !== chId);
+      save(); openBook(bookId); renderHome();
+    }));
+
+    bookView.innerHTML = '';
+    bookView.appendChild(wrap);
+    showView('book');
+  }
+
+  function openChapter(bookId, chapterId){
+    const bk = DATA.books.find(b => b.id === bookId); if(!bk) return;
+    const ch = bk.chapters.find(c => c.id === chapterId); if(!ch) return;
+
+    chapterView.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'card';
+    wrap.style.padding = '14px';
+    wrap.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:start">
+        <div>
+          <button id="back-book" class="btn btn-ghost" style="padding:6px 8px">← Back</button>
+          <div style="font-weight:800; font-size:18px; margin-top:6px">${esc(ch.title)}</div>
+          <div class="muted-sm" style="margin-top:6px">${ch.topics.length} topics</div>
+        </div>
+        <div style="text-align:right">
+          <div id="chapter-pct" style="font-weight:800">${calcChapterPct(ch)}%</div>
+          <div class="muted-sm">chapter</div>
+        </div>
+      </div>
+      <div style="margin-top:12px" class="progress-track"><div id="chapter-fill" class="progress-fill" style="width:${calcChapterPct(ch)}%; background:linear-gradient(90deg, ${colorFor(calcChapterPct(ch))[0]}, ${colorFor(calcChapterPct(ch))[1]})"></div></div>
+      <div id="topics-list" style="margin-top:12px; display:flex; flex-direction:column; gap:10px"></div>
+      <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px">
+        <button id="add-topic-btn" class="btn btn-accent">+ Topic</button>
+        <button id="edit-chapter-btn" class="btn btn-ghost">Edit Chapter</button>
+      </div>
+    `;
+
+    wrap.querySelector('#back-book').addEventListener('click', () => openBook(bookId));
+    wrap.querySelector('#add-topic-btn').addEventListener('click', () => openModal('addTopic', { bookId, chapterId }));
+    wrap.querySelector('#edit-chapter-btn').addEventListener('click', () => openModal('editChapter', { bookId, chapterId, title: ch.title }));
+
+    const topicsList = wrap.querySelector('#topics-list');
+    if(!ch.topics || ch.topics.length === 0){
+      topicsList.innerHTML = `<div class="muted-sm">No topics yet. Add one above.</div>`;
+    } else {
+      ch.topics.forEach(topic => {
+        const row = document.createElement('div');
+        row.className = 'card';
+        row.style.display = 'flex';
+        row.style.justifyContent = 'space-between';
+        row.style.alignItems = 'center';
+        row.style.padding = '10px';
+        row.innerHTML = `
+          <label style="display:flex; align-items:center; gap:12px; width:100%; cursor:pointer;">
+            <input type="checkbox" data-b="${bookId}" data-c="${chapterId}" data-t="${topic.id}" ${topic.done ? 'checked' : ''} />
+            <div style="flex:1">
+              <div style="${topic.done ? 'text-decoration:line-through; color:rgba(230,238,248,0.6)' : ''}; font-weight:700">${esc(topic.text)}</div>
+              <div class="muted-sm" style="margin-top:6px">${topic.done ? 'Done' : 'Pending'}</div>
+            </div>
+          </label>
+          <div style="display:flex; gap:8px">
+            <button class="btn btn-ghost btn-edit-topic" data-b="${bookId}" data-c="${chapterId}" data-t="${topic.id}">Edit</button>
+            <button class="btn btn-ghost btn-del-topic" data-b="${bookId}" data-c="${chapterId}" data-t="${topic.id}" style="color:#fb7185">Delete</button>
+          </div>
+        `;
+
+        // safe checkbox handler (prevent bubbling)
+        const cb = row.querySelector('input[type="checkbox"]');
+        cb.addEventListener('change', (ev) => {
+          ev.stopPropagation();
+          const b = ev.currentTarget.dataset.b, c = ev.currentTarget.dataset.c, t = ev.currentTarget.dataset.t;
+          toggleTopic(b, c, t);
+        });
+
+        // edit/delete topic
+        row.querySelector('.btn-edit-topic').addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          openModal('editTopic', { bookId, chapterId, topicId: topic.id, title: topic.text });
+        });
+        row.querySelector('.btn-del-topic').addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if(!confirm('Delete this topic?')) return;
+          ch.topics = ch.topics.filter(tt => tt.id !== topic.id);
+          save(); openChapter(bookId, chapterId); renderHome();
+        });
+
+        topicsList.appendChild(row);
+      });
+    }
+
+    chapterView.innerHTML = '';
+    chapterView.appendChild(wrap);
+    showView('chapter');
+  }
+
+  /* -------------------------
+     Toggle topic
+     ------------------------- */
+  function toggleTopic(bookId, chapterId, topicId){
+    const book = DATA.books.find(b => b.id === bookId); if(!book) return;
+    const ch = book.chapters.find(c => c.id === chapterId); if(!ch) return;
+    const t = ch.topics.find(tt => tt.id === topicId); if(!t) return;
+    t.done = !t.done;
+    save();
+    // refresh UI chain
+    openChapter(bookId, chapterId);
+    openBook(bookId);
+    renderHome();
+    updateOverallUI();
+  }
+
+  /* -------------------------
+     Modal & CRUD
+     ------------------------- */
+  let modalState = null;
+  function openModal(mode, ctx){
+    modalState = { mode, ctx };
+    modalTitle.textContent = mode === 'addBook' ? 'Add Book' :
+                             mode === 'editBook' ? 'Edit Book' :
+                             mode === 'addChapter' ? 'Add Chapter' :
+                             mode === 'editChapter' ? 'Edit Chapter' :
+                             mode === 'addTopic' ? 'Add Topic' :
+                             mode === 'editTopic' ? 'Edit Topic' : 'Modal';
+    modalInput.value = ctx && ctx.title ? ctx.title : '';
+    modalRoot.style.display = 'flex';
+    modalRoot.setAttribute('aria-hidden','false');
+    modalInput.focus();
+  }
+  function closeModal(){
+    modalRoot.style.display = 'none';
+    modalRoot.setAttribute('aria-hidden','true');
+    modalState = null;
+    modalInput.value = '';
+  }
+
+  modalClose.addEventListener('click', closeModal);
+  modalCancel.addEventListener('click', closeModal);
+
+  modalForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = modalInput.value.trim();
+    if(!v) return alert('Please enter a title');
+    const { mode, ctx } = modalState || {};
+    if(mode === 'addBook'){ DATA.books.push({ id: uid('b'), title: v, chapters: [] }); save(); renderHome(); closeModal(); return; }
+    if(mode === 'editBook'){ const b = DATA.books.find(x => x.id === ctx.bookId); if(b) b.title = v; save(); renderHome(); closeModal(); return; }
+    if(mode === 'addChapter'){ const b = DATA.books.find(x => x.id === ctx.bookId); if(b) b.chapters.push({ id: uid('c'), title: v, topics: [] }); save(); openBook(ctx.bookId); closeModal(); return; }
+    if(mode === 'editChapter'){ const b = DATA.books.find(x => x.id === ctx.bookId); if(b){ const ch = b.chapters.find(x => x.id === ctx.chapterId); if(ch) ch.title = v; } save(); openBook(ctx.bookId); closeModal(); return; }
+    if(mode === 'addTopic'){ const b = DATA.books.find(x => x.id === ctx.bookId); if(b){ const ch = b.chapters.find(x => x.id === ctx.chapterId); if(ch) ch.topics.push({ id: uid('t'), text: v, done:false }); } save(); openChapter(ctx.bookId, ctx.chapterId); closeModal(); return; }
+    if(mode === 'editTopic'){ const b = DATA.books.find(x => x.id === ctx.bookId); if(b){ const ch = b.chapters.find(x => x.id === ctx.chapterId); if(ch){ const t = ch.topics.find(x => x.id === ctx.topicId); if(t) t.text = v; } } save(); openChapter(ctx.bookId, ctx.chapterId); closeModal(); return; }
+  });
+
+  /* -------------------------
+     Views and nav
+     ------------------------- */
+  function showView(name){
+    const map = { home: homeView, book: bookView, chapter: chapterView };
+    Object.keys(map).forEach(k => {
+      const el = map[k];
+      if(k === name){ el.classList.remove('page-hidden'); el.classList.add('page-active'); el.removeAttribute('aria-hidden'); }
+      else { el.classList.remove('page-active'); el.classList.add('page-hidden'); el.setAttribute('aria-hidden','true'); }
+    });
+    // ensure content scroll top to avoid header overlap
+    document.getElementById('content').scrollTop = 0;
+    updateOverallUI();
+  }
+
+  /* -------------------------
+     Event bindings & init
+     ------------------------- */
+  btnAddBook.addEventListener('click', () => openModal('addBook', {}));
+
+  // Keyboard: Esc closes modal
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape'){
+      if(modalRoot.style.display === 'flex') closeModal();
+    }
+  });
+
+  // Simple Settings actions: long-press header ring to reset / load sample (hidden but useful)
+  let pressTimer = null;
+  const ringWrap = document.querySelector('.ring-wrap');
+  ringWrap.addEventListener('touchstart', () => { pressTimer = setTimeout(()=> { if(confirm('Load sample data? This replaces current data.')){ DATA = JSON.parse(JSON.stringify(sample)); save(); renderHome(); } }, 900); });
+  ringWrap.addEventListener('touchend', () => { if(pressTimer) clearTimeout(pressTimer); });
+
+  // Expose openModal to inline use
+  window.openModal = openModal;
+
+  // initial render
+  function init(){
+    renderHome();
+    updateOverallUI();
+  }
+  init();
+
+})();
+</script>
+</body>
+</html>
